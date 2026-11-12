@@ -874,6 +874,30 @@ function setAbout(on) {
 document.getElementById("name").addEventListener("click", e => { e.preventDefault(); setAbout(!aboutOn); });
 document.getElementById("info-link").addEventListener("click", e => { e.preventDefault(); setAbout(!aboutOn); });   // footer "Information" → About
 aboutEl.querySelectorAll('a[href="#"]').forEach(a => a.addEventListener("click", e => e.preventDefault()));
+/* Email links: the mailto still opens the visitor's mail app; as a fallback for anyone without one
+   set up, the address is also copied and the link briefly reads "Email copied". */
+function copyLegacy(s) {
+  const ta = document.createElement("textarea");
+  ta.value = s; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+  document.body.appendChild(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch {} finally { ta.remove(); }
+  return ok ? Promise.resolve() : Promise.reject();
+}
+function copyText(s) {
+  if (navigator.clipboard && isSecureContext) return navigator.clipboard.writeText(s).catch(() => copyLegacy(s));
+  return copyLegacy(s);
+}
+document.querySelectorAll('a[href^="mailto:"]').forEach(a => {
+  const label = a.textContent, done = /\.$/.test(label) ? "email copied." : "Email copied";
+  let timer;
+  a.addEventListener("click", () => {
+    copyText(a.getAttribute("href").slice(7).split("?")[0]).then(() => {
+      a.textContent = done; clearTimeout(timer);
+      timer = setTimeout(() => { a.textContent = label; }, 2000);
+    }, () => {});
+  });
+});
 // a click anywhere that isn't one of the text blocks closes About
 // close: desktop/tablet — any click that isn't on a text block; phone — any tap that isn't on a link
 aboutEl.addEventListener("click", e => { if (isPhone ? !e.target.closest("a") : !e.target.closest("p")) setAbout(false); });
