@@ -2,8 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dan Abary</title>
+<!-- Tab icon ("DA"): SVG where supported, PNG fallbacks; iPhone home screen; Google's results use 48/192 -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="favicon-48.png" sizes="48x48" type="image/png">
+<link rel="icon" href="favicon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- Share preview (iMessage, Slack, LinkedIn, X…): 1200×630 card, exported at 2× for retina -->
+<meta name="description" content="Dan Abary: Design, art direction, and other things.">
+<link rel="canonical" href="https://dan-abary.com/">
+<!-- Structured data: tells search engines who the site is about and links the profiles -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://dan-abary.com/#dan",
+      "name": "Dan Abary",
+      "alternateName": "Daniel Abary",
+      "url": "https://dan-abary.com/",
+      "image": "https://dan-abary.com/share.png",
+      "jobTitle": "Designer and Art Director",
+      "description": "Los Angeles-based designer whose work spans image making, drawing, graphic design, art direction, and typography.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Los Angeles",
+        "addressRegion": "CA",
+        "addressCountry": "US"
+      },
+      "alumniOf": {
+        "@type": "CollegeOrUniversity",
+        "name": "School of Visual Arts"
+      },
+      "award": "Type Directors Club Winner, 2022 — Oatly, Hey Barista",
+      "knowsAbout": [
+        "Brand design",
+        "Visual identity",
+        "Art direction",
+        "Typography",
+        "Typeface design",
+        "Editorial design",
+        "Illustration"
+      ],
+      "sameAs": [
+        "https://www.instagram.com/dan.abary/",
+        "https://www.linkedin.com/in/daniel-abary/",
+        "https://www.are.na/dan-abary"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://dan-abary.com/#site",
+      "url": "https://dan-abary.com/",
+      "name": "Dan Abary",
+      "author": {
+        "@id": "https://dan-abary.com/#dan"
+      },
+      "inLanguage": "en"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dan-abary.com/">
+<meta property="og:title" content="Dan Abary">
+<meta property="og:description" content="Design, art direction, and other things.">
+<meta property="og:image" content="https://dan-abary.com/share.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="Dan Abary">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://dan-abary.com/share.png">
 <style>
   /* FT System Blank Regular, served with the site so every visitor sees the same type
      (the loading screen waits for it, so there's no flash of a fallback font) */
@@ -28,6 +100,8 @@
     overscroll-behavior: none;
   }
   a { color: inherit; text-decoration: none; }
+  .vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+        overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 
   /* Chrome — pinned above everything, including the expanded tile */
   .chrome { position: fixed; z-index: 10; pointer-events: none; line-height: 1.1; }
@@ -42,6 +116,12 @@
           grid-template-columns: 1fr auto 1fr; align-items: baseline;   /* middle item on the true centre */
           font-size: clamp(12px, .833vw, 16px); }
   .foot > :nth-child(3) { justify-self: end; }
+  /* viewport-fit=cover lets the images run under the iPhone's status bar and toolbar; the text
+     keeps clear of the notch and home indicator. env() is 0 on desktops, so nothing moves there. */
+  .head { left: max(var(--m), env(safe-area-inset-left)); }
+  .copy { right: max(var(--m), env(safe-area-inset-right)); }
+  .foot { left: max(var(--m), env(safe-area-inset-left)); right: max(var(--m), env(safe-area-inset-right));
+          bottom: max(var(--m), env(safe-area-inset-bottom)); }
 
   /* Belt */
   .belt { position: fixed; inset: 0; }
@@ -133,7 +213,39 @@
   html, body { touch-action: none; }
   /* Phones: the browser handles two-finger pinch-zoom natively (like any page in Safari) while the
      site keeps handling one-finger scrolling. Once zoomed in, one finger pans natively too. */
-  html.phone, html.phone body { touch-action: pinch-zoom; }
+  html.phone, html.phone body { touch-action: pan-y pinch-zoom; }
+  /* Phones: the feed is the page itself, scrolled natively by Safari. iOS 26 clips anything
+     position: fixed to the strip between its status bar and toolbar; only real page scroll
+     passes behind them, so this is what lets the images bleed off the top and bottom of the
+     screen. The JS places each tile at a fixed spot in a tall page (no per-frame moving), and
+     the rest of the phone behaviour (header/footer hide, ink, white strip) reads the scroll.
+     Tablet and desktop keep the fixed belt and the hand-built scrolling. */
+  html.phone { height: auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; }
+  html.phone::-webkit-scrollbar { display: none; }
+  html.phone body { height: auto; overflow: visible; overscroll-behavior-y: auto; }
+  html.phone .belt { position: relative; inset: auto; height: var(--feed-h, 100vh); }
+  html.phone body.is-vert .vband { display: none; }        /* the white top strip is real page space now */
+  /* About's ghost: fade the tiles rather than the whole (very tall) feed layer */
+  html.phone body.is-about .belt { opacity: 1; }
+  html.phone .tile { transition: opacity .6s ease; }
+  html.phone body.is-about .tile { opacity: .10; }
+  /* Phone About: the copy becomes the page Safari scrolls (so it runs behind the bars too).
+     The ghosted feed stays part of the page underneath — trimmed to the copy's length, starting
+     from where you were — and scrolls with it. Nothing is pinned to the screen edges: a pinned
+     layer is what makes iOS 26 turn its toolbar solid grey (and keep it that way). */
+  html.phone body.about-page .belt { height: var(--about-h, 100vh); overflow: clip; }
+  html.phone body.about-page .about { position: absolute; top: 0; left: 0; right: 0; bottom: auto;
+    min-height: 100vh; overflow: visible; overscroll-behavior: auto; }
+  html.phone body.about-head .head, html.phone body.about-head .copy { position: absolute; }   /* scrolls with the copy */
+  /* iOS Safari 26 turns its bottom toolbar solid when a pinned layer gives the bottom edge a
+     dominant colour (here: the ghosted feed under About) and keeps it solid until reload.
+     A thin, fully transparent strip on top of everything at that edge is what Safari samples
+     instead, so the toolbar stays clear glass. iOS only (-webkit-touch-callout), phones only. */
+  .ios-glass { display: none; }
+  @supports (-webkit-touch-callout: none) {
+    html.phone .ios-glass { display: block; position: fixed; left: 0; right: 0; bottom: -2px; height: 6px;
+      z-index: 999; background: transparent; pointer-events: none; }
+  }
   html.phone.pz, html.phone.pz body { touch-action: auto; }
   .vband { position: fixed; left: 0; right: 0; z-index: 7; background: var(--paper); pointer-events: none; display: none; }
   body.is-vert .vband { display: block; }
@@ -144,7 +256,8 @@
     .mbr { display: inline; }
     /* phone type: header + About 17px; © and footer 2% larger than 12px */
     body.is-vert .head, body.is-vert .about { font-size: 20px; }
-    body.is-vert .head, body.is-vert .copy { top: 18px; }       /* top stays put; only the sides move in */
+    body.is-vert .head, body.is-vert .copy { top: calc(18px + env(safe-area-inset-top)); }   /* 18px under the status bar */
+    body.is-vert .chrome.foot { bottom: calc(var(--m) + env(safe-area-inset-bottom)); }      /* clear of the home indicator */
     /* About measure: narrower than the screen so paragraphs rag long / short instead of
        running edge to edge; "pretty" wrapping avoids one-word last lines */
     body.is-vert .about .bio { max-width: calc(100% - 20px); text-wrap: pretty; }   /* right edge ≈ middle of ©2026 */          /* prose only; lists keep one line per item */
@@ -167,17 +280,17 @@
       transition: transform var(--head-anim, .35s) cubic-bezier(.2, .8, .2, 1); }
     body.is-vert .chrome.foot > :not(.foot-mid) { display: none; }
     body.is-vert .chrome.foot > .foot-mid { margin: 0; transition: color .2s ease; }
-    body.is-vert.head-hidden .chrome.foot, body.is-vert.is-about .chrome.foot { transform: translateY(calc(100% + 48px)); }
+    body.is-vert.head-hidden .chrome.foot, body.is-vert.is-about .chrome.foot { transform: translateY(calc(100% + 48px + env(safe-area-inset-bottom))); }
     body.is-vert .tile { cursor: default; }
     body.is-vert .about {
-      top: 0; bottom: var(--band-bot); padding-bottom: 56px;          /* full screen, room below the last line */
+      top: 0; bottom: var(--band-bot); padding-bottom: calc(56px + env(safe-area-inset-bottom));   /* full screen, room below the last line */
       padding-top: calc(var(--head-bottom, 60px) + var(--sec));       /* first line one paragraph space under the header */
       overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y;
     }
     /* Header motion. Home: slides up off-screen while the feed scrolls, back down once it rests.
        About: the header is part of the page and scrolls with the copy (set per frame in JS). */
     body.is-vert .head, body.is-vert .copy { transition: color .2s ease, transform var(--head-anim, .35s) cubic-bezier(.2, .8, .2, 1); }
-    body.is-vert.head-hidden .head, body.is-vert.head-hidden .copy { transform: translateY(calc(-100% - 48px)); }
+    body.is-vert.head-hidden .head, body.is-vert.head-hidden .copy { transform: translateY(calc(-100% - 48px - env(safe-area-inset-top))); }
     body.is-vert.head-follow .head, body.is-vert.head-follow .copy { transition: color .2s ease; }
     /* phone footer: clock on the left; Contact Me + Instagram as one unit on the right,
        Instagram's right edge on the margin (same line as ©2026 above), one gutter apart */
@@ -217,12 +330,44 @@
     <a href="https://www.instagram.com/dan.abary/" target="_blank" rel="noopener">Instagram</a>
   </div>
 
+  <!-- For search engines and screen readers: who this is and the work in the feed, as plain text
+       (the feed itself is drawn by script). Visually hidden; it says nothing the site doesn't show. -->
+  <section class="vh" aria-labelledby="site-h1">
+    <h1 id="site-h1">Dan Abary — designer and art director, Los Angeles</h1>
+    <p>Design, art direction, and other things. Image making, drawing, graphic design, art direction, and typography.</p>
+    <h2>Selected work</h2>
+    <ul>
+      <li>Fellowship TV: Visual Identity &amp; Site</li>
+      <li>Public Practice / Wharfcat Records: Record Jacket Design</li>
+      <li>Dark Tea: Show Flier</li>
+      <li>Bandwagon Production: Wordmark Design</li>
+      <li>Kate Spade Dakota Campaign: Creative Direction &amp; Design, at SYLVAIN</li>
+      <li>Civic News Company: Visual Identity, at SYLVAIN</li>
+      <li>Ian Wayne: Cassette J-Card Design</li>
+      <li>F.F.F.F. Run Club: Racing Singlet Graphics</li>
+      <li>F.F.F.F. Run Club: Frog Supporter Hat</li>
+      <li>Hinge D.A.T.E. Report: Editorial Design, at SYLVAIN</li>
+      <li>Hey Barista / Oatly: Visual Identity &amp; Site, at Isometric Studio</li>
+      <li>Hey Barista Magazine / Oatly: Editorial Design &amp; Creative Direction, Freelance</li>
+      <li>Etsy: Rebrand, at SYLVAIN</li>
+      <li>Meta Quest 3S: Visual Identity, at SYLVAIN</li>
+      <li>Rips / Silk Sign / Poppies: Show Flier</li>
+      <li>Outer Body: Album Art</li>
+      <li>Da Grotesk: Typeface Design</li>
+      <li>Erulean Angel: Wordmark &amp; Type Explore</li>
+      <li>Dark Tea: Cassette J-Card Design</li>
+      <li>Progress Report: Illustration, at SYLVAIN</li>
+      <li>The Sak: Visual Identity, at Redscout</li>
+      <li>Quest Diagnostics: Visual Identity, at Redscout</li>
+      <li>The Acting Company: Visual Identity, at Isometric Studio</li>
+    </ul>
+  </section>
   <main class="belt" aria-label="Selected work"></main>
   <div class="vband top" aria-hidden="true"></div>
   <div class="vband bot" aria-hidden="true"></div>
 
   <section class="about" id="about" aria-label="About" aria-hidden="true">
-    <p class="bio">A Los Angeles-based designer whose work spans image making, drawing, graphic design, art direction, and typography. Dan began his creative practice as an artist and musician, and in recent years has worked as a brand designer, leading identity and campaign work across health, tech, fashion, entertainment, and cultural institutions. Fluent in strategy and concept, he looks for solutions where culture, commerce, and communication meet.</p>
+    <p class="bio">A Los Angeles-based designer whose work spans image making, drawing, graphic design, art direction, and typography. Dan began his creative practice as an artist and musician in NYC, and in recent years has worked as a brand designer, leading identity and campaign work across health, tech, fashion, entertainment, and cultural institutions. Fluent in strategy and concept, he looks for solutions where culture, commerce, and communication meet.</p>
 
     <div class="sec l"><p>Experience:</p><p>Associate Design Director at SYLVAIN<br>Designer at Redscout<br>Freelance Designer at Isometric Studio<br>Design Intern at BAM<br>Art Director at Keap BK</p></div>
     <div class="sec r"><p>Select Clients:</p><p class="clients">Etsy, Hinge, Kate Spade, Meta, FIFA, Quest Diagnostics, Oatly, Rose Art Museum, Artists’ Literacy Institute, Nielsen, Sage Health, CareCredit, Walmart, Ian Wayne, Wharfcat Records, Bush Tetras, Bandwagon, Fellowship TV</p></div>
@@ -236,6 +381,7 @@
   <div class="cap" id="cap" aria-hidden="true"></div>
   <div class="loader" id="loader" role="status" aria-label="Loading"><p aria-hidden="true">Loading the site...</p></div>
   <div class="tune" id="tune"></div>
+  <div class="ios-glass" aria-hidden="true"></div>
 
 <script>
 /* ------------------------------------------------------------------
@@ -253,6 +399,7 @@ const TILES = [
   ["n26",455,569],["n27",566,425],["n28",455,569],["n29",425,425],["n30",339,425],
   ["n31",425,425],["n32",455,569],["n33",339,425],["n34",339,425],["n35",759,569],
   ["n36",339,425],["n37",566,425],["n38",569,569],["n39",566,425],
+  ["n40",566,425],["n41",759,569],   // 40 Fellowship landing page · 41 Imposter Demons stone tablet (large: hangs to the long baseline)
 ];
 
 /* Captions, one per tile (null = none). Lines: client / project type / where. */
@@ -264,38 +411,40 @@ const CAPS = [
   ["Public Practice / Wharfcat Records", "Record Jacket Design"],
   ["Dark Tea", "Show Flier"],
   ["Bandwagon Production", "Wordmark Design"],
-  ["Hey Barista / Oatly", "Visual Identity & Site", "At Isometric Studio"],
-  ["Kate Spade Dakota Campaign", "Creative Direction & Design", "At SYLVAIN"],
-  ["Kate Spade Dakota Campaign", "Creative Direction & Design", "At SYLVAIN"],
-  ["Civic News Company", "Visual Identity", "At SYLVAIN"],
-  ["Civic News Company", "Visual Identity", "At SYLVAIN"],
-  ["Civic News Company", "Visual Identity", "At SYLVAIN"],
+  ["Hey Barista / Oatly", "Visual Identity & Site", "at Isometric Studio"],
+  ["Kate Spade Dakota Campaign", "Creative Direction & Design", "at SYLVAIN"],
+  ["Kate Spade Dakota Campaign", "Creative Direction & Design", "at SYLVAIN"],
+  ["Civic News Company", "Visual Identity", "at SYLVAIN"],
+  ["Civic News Company", "Visual Identity", "at SYLVAIN"],
+  ["Civic News Company", "Visual Identity", "at SYLVAIN"],
   ["Ian Wayne", "Cassette J-Card Design"],
   ["F.F.F.F. Run Club", "Racing Singlet Graphics"],
   ["F.F.F.F. Run Club", "Racing Singlet Graphics"],
   ["F.F.F.F. Run Club", "Frog Supporter Hat"],
-  ["Hinge D.A.T.E. Report", "Editorial Design", "At SYLVAIN"],
-  ["Hinge D.A.T.E. Report", "Editorial Design", "At SYLVAIN"],
+  ["Hinge D.A.T.E. Report", "Editorial Design", "at SYLVAIN"],
+  ["Hinge D.A.T.E. Report", "Editorial Design", "at SYLVAIN"],
   ["Hey Barista Magazine / Oatly", "Editorial Design & Creative Direction", "Freelance"],
-  ["Etsy", "Rebrand", "At SYLVAIN"],
-  ["Etsy", "Rebrand", "At SYLVAIN"],
-  ["Etsy", "Rebrand", "At SYLVAIN"],
-  ["Etsy", "Rebrand", "At SYLVAIN"],
-  ["Meta Quest 3S", "Visual Identity", "At SYLVAIN"],
-  ["Meta Quest 3S", "Visual Identity", "At SYLVAIN"],
-  ["Meta Quest 3S", "Visual Identity", "At SYLVAIN"],
+  ["Etsy", "Rebrand", "at SYLVAIN"],
+  ["Etsy", "Rebrand", "at SYLVAIN"],
+  ["Etsy", "Rebrand", "at SYLVAIN"],
+  ["Etsy", "Rebrand", "at SYLVAIN"],
+  ["Meta Quest 3S", "Visual Identity", "at SYLVAIN"],
+  ["Meta Quest 3S", "Visual Identity", "at SYLVAIN"],
+  ["Meta Quest 3S", "Visual Identity", "at SYLVAIN"],
   ["Rips / Silk Sign / Poppies", "Show Flier"],
   ["Outer Body", "Album Art"],
   null,
   ["Da Grotesk", "Typeface Design"],
   ["Erulean Angel", "Wordmark & Type Explore"],
   ["Dark Tea", "Cassette J-Card Design"],
-  ["Progress Report", "Illustration", "At SYLVAIN"],
+  ["Progress Report", "Illustration", "at SYLVAIN"],
   ["Da Grotesk", "Typeface Design"],
-  ["The Sak", "Visual Identity", "At Redscout"],
-  ["Quest Diagnostics", "Visual Identity", "At Redscout"],
+  ["The Sak", "Visual Identity", "at Redscout"],
+  ["Quest Diagnostics", "Visual Identity", "at Redscout"],
   null,                                   // "Preview More to Come" — removed for now
-  ["The Acting Company", "Visual Identity", "At Isometric Studio"],
+  ["The Acting Company", "Visual Identity", "at Isometric Studio"],
+  ["Fellowship TV", "Visual Identity & Site"],
+  ["Progress Report", "Illustration", "at SYLVAIN"],
 ];
 
 /* Looping videos, by tile number. rect = where the video sits inside the tile, as fractions
@@ -318,6 +467,7 @@ const VIDEOS = {
         crop: [240/1920, 8.25/1080, 1418/1920, 1063.5/1080] },
   22: { src: "videos/n22.mp4", rect: [0, 0.1247, 1, 0.7506], matte: "#f8f7f5" },     // Etsy motion, on matte
   24: { src: "videos/n24.mp4", rect: [0.0393, 0.1542, 0.9214, 0.6916], matte: "#efefef" },   // Etsy photo + logo, on matte
+  34: { src: "videos/n34.gif", rect: [0, 0, 1, 1] },                         // Imposter Demons illustrations GIF, full tile (still = its first frame)
 };
 
 /* Tunables — exposed in the T panel */
@@ -363,18 +513,20 @@ const easeSnap = bezier(0.2, 0.9, 0.25, 1);   // swipe between zoomed tiles: mov
 /* Belt order, by tile number. Tiles keep their numbers (videos, crops and captions are keyed
    to them), so rearranging the belt is just reordering this list. */
 const ORDER = [
-  2, 3, 4, 1, 5, 6, 7, 10, 9, 11, 12, 13, 14,
+  2, 40, 3, 4, 1, 5, 6, 7, 10, 9, 11, 12, 13, 14,
   15, 16, 17, 18, 19, 8, 20, 21, 22, 23, 24, 25, 26,
-  27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-];   // 01 sits between 04 and 05 · 10 Kate Spade video before 09 bag photo · 08 Hey Barista site just before 20 Keep the Rave spread
+  27, 28, 29, 30, 31, 32, 33, 41, 34, 35, 36, 37, 38, 39,
+];   // 40 Fellowship landing between the loop GIF (02) and the red page (03) · 41 stone tablet before the Imposter Demons GIF (34) · 01 sits between 04 and 05 · 10 Kate Spade video before 09 bag photo · 08 Hey Barista site just before 20 Keep the Rave spread
 
 const tiles = ORDER.map(n => {
   const [file, dw, dh] = TILES[n - 1], i = n - 1;
   const el = document.createElement("button");
   el.className = "tile";
-  el.setAttribute("aria-label", `Project ${i + 1}`);
+  // alt text / accessible name from the caption: "Etsy: Rebrand, at SYLVAIN" (search engines + screen readers)
+  const c = CAPS[i], label = c ? `${c[0]}: ${c.slice(1).join(", ")}` : "Dan Abary, selected work";
+  el.setAttribute("aria-label", label);
   const img = new Image();
-  img.alt = ""; img.decoding = "async"; img.draggable = false;
+  img.alt = label; img.decoding = "async"; img.draggable = false;
   img.onload = () => img.classList.add("is-loaded");
   img.src = `${TILE_DIR}/${file}.jpg`;
   el.append(img);
@@ -449,6 +601,40 @@ let vw, vh, s, gap, bandTop, L, B;
 let vert = false, isPhone = false, vm = 0, topBand = 0, botBand = 0, openCapH = 0;
 let zk = 0, zkv = 0, zTarget = 0, cTarget = null, zDrag = false, zScale = 1, Lz = 1;   // phone/tablet zoom magnifier (see below)
 const VERT_CAPTIONS = false;   // captions under zoomed images on tablet/phone (off for now)
+const PHONE_FIRST = 20;        // phone feed opens on the Keep the Rave Alive magazine spread
+/* Phone page feed: the page is this many laps of the loop tall, and grows as you near the end,
+   so it reads as endless. Each tile sits in the lap nearest the screen (moved only off-screen). */
+let feedLaps = 12;
+// Phone About: the page is About (from its first line to its last); the feed rides along under it,
+// shifted so it carries on from where you were. aboutPageY = the feed position at the page's top.
+let aboutPageY = null, aboutSwapT = 0;
+function feedScrollY() { return (aboutPageY === null ? 0 : aboutPageY) + scrollY; }   // where the feed is
+function placePhoneTiles() {          // write tile positions now, so a page jump and the tiles move in one frame
+  phoneFrame();
+  for (const t of tiles) { const tf = `translate3d(0px, ${snap(t._docY)}px, 0)`; if (tf !== t._tf) { t.el.style.transform = tf; t._tf = tf; } }
+}
+function setFeedScroll(y) {           // put the feed at y (resize anchoring)
+  if (aboutPageY !== null) { aboutPageY = y; scrollTo(0, 0); } else scrollTo(0, y);
+  placePhoneTiles();
+}
+function enterAboutPage() {           // same frame: the page becomes About from the top; the feed doesn't move
+  clearTimeout(aboutSwapT);
+  if (aboutPageY !== null) return;
+  aboutPageY = scrollY;
+  document.body.classList.add("about-page");
+  document.documentElement.style.setProperty("--about-h", aboutEl.offsetHeight + "px");
+  scrollTo(0, 0);
+  placePhoneTiles();
+}
+function leaveAboutPage() {           // same frame: the feed becomes the page again, exactly where it shows now
+  if (aboutPageY === null) return;
+  const y = feedScrollY(); aboutPageY = null;
+  document.body.classList.remove("about-page", "about-head");
+  scrollTo(0, y);
+  placePhoneTiles();
+}
+function setFeedHeight() { document.documentElement.style.setProperty("--feed-h", Math.ceil(topBand + feedLaps * L) + "px"); }
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";   // a reload starts at the top, as before
 function layout() {
   // layout viewport, not the visual one: pinch-zooming the page must not rebuild the feed
   const de = document.documentElement;
@@ -456,18 +642,32 @@ function layout() {
   s = vw / 1920;
   vert = vw < 1024 && vh > vw * 0.9;
   isPhone = vert && vw < 600;
-  de.classList.toggle("phone", isPhone);
+  if (de.classList.contains("phone") !== isPhone) {
+    // switching into / out of the phone page changes what scrolls; measure again once it has
+    de.classList.toggle("phone", isPhone);
+    vw = de.clientWidth || innerWidth; vh = de.clientHeight || innerHeight;
+    s = vw / 1920; vert = vw < 1024 && vh > vw * 0.9; isPhone = vert && vw < 600;
+    de.classList.toggle("phone", isPhone);
+    if (!isPhone && aboutPageY !== null) {          // left the phone page with About up: back to the overlay
+      aboutPageY = null; clearTimeout(aboutSwapT);
+      document.body.classList.remove("about-page", "about-head");
+      headEl.style.transform = copyEl.style.transform = "";
+    }
+  }
   document.body.classList.toggle("is-vert", vert);
   const root = document.documentElement.style;
   if (vert) {
     const phone = vw < 600;
     vm = phone ? 18 : 16;                          // gap between tiles
     root.setProperty("--m", (phone ? 14 : vm) + "px");   // phone: header, © and About sit 14px from the edges
-    const hb = document.querySelector(".head").getBoundingClientRect().bottom;
+    // header bottom without its phone slide-away transform (a resize can land while it's hidden)
+    const headBox = document.querySelector(".head");
+    const hb = headBox.getBoundingClientRect().bottom - (new DOMMatrixReadOnly(getComputedStyle(headBox).transform).m42 || 0);
     const ft = document.querySelector(".foot").getBoundingClientRect().top;
     topBand = Math.ceil(hb + (phone ? 70 : vm));   // phone: generous air between the two-line header and the feed
     botBand = isPhone ? 0 : Math.ceil(vh - ft + vm);   // phone: images run under the footer to the bottom edge
     root.setProperty("--band-top", topBand + "px"); root.setProperty("--band-bot", botBand + "px");
+    if (!isPhone) root.removeProperty("--feed-h");
     // phone: About's scroll window starts 10px under the header (where text vanishes as you scroll);
     // padding inside brings the first line to one paragraph space (--sec) below the header
     root.setProperty("--about-top", topBand + "px");
@@ -477,9 +677,16 @@ function layout() {
     for (const t of tiles) {
       t.w = isPhone ? vw : vw - 2 * vm;               // phone: edge to edge
       t.h = t.w * t.dh / t.dw; t.x0 = y; y += t.h + gap;   // x0 = position along the feed
-      t._w = t._h = null;
+      t._w = t._h = null; t._tf = null;
     }
     L = y; B = (L - vh) / 2;
+    if (isPhone) {
+      // native page feed: the Rave spread opens the page under the white strip, the rest follow
+      // in belt order and wrap round; each tile's place within one lap of the loop
+      const f = tiles.find(t => t.n === PHONE_FIRST) || tiles[0];
+      for (const t of tiles) t.rel = (((t.x0 - f.x0) % L) + L) % L;
+      setFeedHeight();
+    }
     // zoomed strip: every tile full width (or fitted to the height between the bands), one gap apart
     const avail = vh - topBand - botBand;
     let z = 0;
@@ -492,6 +699,7 @@ function layout() {
     return;
   }
   root.removeProperty("--m");
+  root.removeProperty("--feed-h");
   gap = 20 * s;
   bandTop = Math.round(vh / 2 - 171 * s);   // matches y=369 on a 1080 frame
   const hb = document.querySelector(".head").getBoundingClientRect().bottom;
@@ -505,9 +713,14 @@ function layout() {
   B = (L - vw) / 2;            // keep the wrap seam far off both edges
 }
 addEventListener("resize", () => {
+  // Phone: Safari's toolbar growing/shrinking as you scroll fires resize with only the height
+  // changing. Tile sizes depend on the width alone, so just note the new height — re-laying out
+  // (and re-anchoring) mid-scroll would make the feed jump.
+  if (isPhone && document.documentElement.clientWidth === vw) { vh = document.documentElement.clientHeight || innerHeight; return; }
   // Vertical feed (phone/tablet): keep the same tile at the top through a resize or rotation —
   // tile heights change with the width, so the raw scroll position would otherwise slip.
   // Desktop is untouched: it just re-lays out, as before.
+  const wasPhone = isPhone;
   let anchor = null;
   if (vert && !openT && tiles.length) {
     let best = null, bd = Infinity;
@@ -515,6 +728,16 @@ addEventListener("resize", () => {
     anchor = { t: best, frac: (topBand - best.pos) / (best.h + gap) };
   }
   layout();
+  if (isPhone) {                                    // phone: the same anchoring, as a page scroll
+    let y = 0;
+    if (anchor) {
+      const k = wasPhone ? (anchor.t._k || 0) : 0;
+      y = Math.max(0, topBand + anchor.t.rel + k * L - (topBand - anchor.frac * (anchor.t.h + gap)));
+    }
+    setFeedScroll(y);
+    return;
+  }
+  if (wasPhone) scrollTo(0, 0);                     // leaving the phone page: back to the fixed belt
   if (vert && anchor && !openT) offset = target = anchor.t.x0 + anchor.frac * (anchor.t.h + gap) - topBand;
 });
 /* Page zoom state (phones): while zoomed in past 100%, touches belong to the browser (pan around the
@@ -533,12 +756,17 @@ let offset = 0, target = 0;    // px travelled leftward (negative = backwards)
 // Phone: the feed has a top — the first tile (PHONE_FIRST) sitting just under the header's white
 // strip. You can't scroll above it (pulling past it stretches and springs back, like iOS).
 let phoneTop = null, stripH = 0;
-const PHONE_FIRST = 20;                // phone feed opens on the Keep the Rave Alive magazine spread
 function phoneTopOffset() { const f = tiles.find(t => t.n === PHONE_FIRST); return f ? f.x0 - topBand : -topBand; }
-if (vert) {                             // vertical feed starts exactly where the top padding ends
-  offset = target = isPhone ? phoneTopOffset() : -topBand;
+// Every layout opens on the Keep the Rave Alive spread (PHONE_FIRST), in the spot the first tile
+// used to take: desktop — the left edge of the belt; tablet — just under the top padding.
+{
+  const first = tiles.find(t => t.n === PHONE_FIRST), x = first ? first.x0 : 0;
+  if (vert) offset = target = isPhone ? phoneTopOffset() : x - topBand;   // vertical feed starts where the top padding ends
+  else offset = target = x;
 }
-let moving = reduceMotion ? 0 : 1;   // 0..1 drift factor, eased
+let moving = 0;                      // 0..1 drift factor, eased (starts still; see loaderUp)
+let loaderUp = true;                 // the belt holds still under the loading screen, so it's revealed exactly
+                                     // on its opening tile, then eases into its drift
 const mouse = { x: -1, y: -1, in: false };
 addEventListener("pointermove", e => { if (e.pointerType === "mouse") { mouse.x = e.clientX; mouse.y = e.clientY; mouse.in = true; } });
 document.documentElement.addEventListener("mouseleave", () => { mouse.in = false; });
@@ -546,6 +774,7 @@ addEventListener("blur", () => { mouse.in = false; });
 
 /* Scroll → travel, either direction */
 addEventListener("wheel", e => {
+  if (isPhone) return;               // phone: the page scrolls natively
   e.preventDefault();
   let d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
   if (e.deltaMode === 1) d *= 16; else if (e.deltaMode === 2) d *= vh;
@@ -580,6 +809,7 @@ addEventListener("gesturestart", e => { if (pinch || !isPhone) e.preventDefault(
 const FLING_DECAY = 0.998;                            // per ms, iOS "normal" deceleration
 addEventListener("pointerdown", e => {
   if (e.pointerType === "mouse") return;
+  if (isPhone) return;                                // phone: Safari scrolls the page itself
   if (e.target.closest && e.target.closest(".tune")) return;   // tuning sliders, not the feed
   if (pageZoomed) return;                             // zoomed page: the browser pans it
   touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -766,6 +996,20 @@ function beltTap() {
   if (vert) { if (zTarget === 1) zClose(); return; }
   if (openT && !sw) dir = -1;
 }
+/* Phone page feed: each tile sits in the lap of the loop nearest the middle of the screen
+   (a lap is thousands of px, so a tile only ever changes lap far off-screen), at
+   page y = white strip + its place in the lap + lap × lap length. Returns screen rects for
+   the ink sampling; the tiles themselves don't move — the page scrolls under the chrome. */
+function phoneFrame() {
+  const sy = feedScrollY();
+  if (sy + vh + 2 * L > topBand + feedLaps * L) { feedLaps += 10; setFeedHeight(); }   // keep it endless
+  return tiles.map(t => {
+    const k = Math.max(0, Math.round((sy + vh / 2 - topBand - t.rel - t.h / 2) / L));
+    t._k = k; t._docY = topBand + t.rel + k * L - (aboutPageY === null ? 0 : aboutPageY);   // y on the page
+    t.pos = topBand + t.rel + k * L - sy;                                                  // y on screen
+    return { x: 0, y: t.pos, w: t.w, h: t.h };
+  });
+}
 function vertFrame(dt) {
   // zoom amount: critically damped spring — moves the instant you tap, lands softly, no overshoot
   const n = Math.max(1, Math.ceil(dt * 240));
@@ -864,13 +1108,21 @@ function setAbout(on) {
   document.body.classList.toggle("is-about", on);
   aboutEl.setAttribute("aria-hidden", String(!on));
   if (isPhone) {
-    if (on) { aboutEl.scrollTop = 0; headHidden = false; document.body.classList.remove("head-hidden"); }
-    else {
+    if (on) {
+      enterAboutPage();
+      headHidden = false; document.body.classList.remove("head-hidden");
+      document.body.classList.add("about-head");
+    } else {
       // smooth reset: About fades, the header glides back down from wherever the copy took it,
-      // and the copy quietly returns to the top once it's invisible
-      document.body.classList.remove("head-follow");
+      // and once About is invisible the feed becomes the page again, exactly where it was
+      const S = scrollY, body = document.body;
+      body.classList.add("head-follow");                     // no transition for this hand-over
+      headEl.style.transform = copyEl.style.transform = `translateY(${-S}px)`;
+      body.classList.remove("about-head");                   // fixed again, drawn where the page had it
+      headEl.getBoundingClientRect();                        // commit that start point
+      body.classList.remove("head-follow");
       requestAnimationFrame(() => { headEl.style.transform = ""; copyEl.style.transform = ""; });
-      setTimeout(() => { if (!aboutOn) aboutEl.scrollTop = 0; }, 700);
+      aboutSwapT = setTimeout(() => { if (!aboutOn) leaveAboutPage(); }, 700);
       headIdleT = 0; headMoveT = 0;
     }
   }
@@ -878,8 +1130,9 @@ function setAbout(on) {
 document.getElementById("name").addEventListener("click", e => { e.preventDefault(); setAbout(!aboutOn); });
 document.getElementById("info-link").addEventListener("click", e => { e.preventDefault(); setAbout(!aboutOn); });   // footer "Information" → About
 aboutEl.querySelectorAll('a[href="#"]').forEach(a => a.addEventListener("click", e => e.preventDefault()));
-/* Email links: the mailto still opens the visitor's mail app; as a fallback for anyone without one
-   set up, the address is also copied and the link briefly reads "Email copied". */
+/* Email links ("Contact Me", "send me an email."): a click copies the address to the clipboard and
+   the link briefly reads "Email copied" — it doesn't open a mail app. (The mailto href stays for
+   right-click / long-press "copy link" and for anyone with scripts off.) */
 function copyLegacy(s) {
   const ta = document.createElement("textarea");
   ta.value = s; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
@@ -895,7 +1148,8 @@ function copyText(s) {
 document.querySelectorAll('a[href^="mailto:"]').forEach(a => {
   const label = a.textContent, done = /\.$/.test(label) ? "email copied." : "Email copied";
   let timer;
-  a.addEventListener("click", () => {
+  a.addEventListener("click", e => {
+    e.preventDefault();
     copyText(a.getAttribute("href").slice(7).split("?")[0]).then(() => {
       a.textContent = done; clearTimeout(timer);
       timer = setTimeout(() => { a.textContent = label; }, 2000);
@@ -945,7 +1199,7 @@ function frame(now) {
 
   // drift factor: ease to 0 on hover / while open, back to 1 otherwise
   const touching = !!drag && !openT;
-  const want = (openT || reduceMotion || touching || fling || (!aboutOn && hovering())) ? 0 : 1;
+  const want = (loaderUp || openT || reduceMotion || touching || fling || (!aboutOn && hovering())) ? 0 : 1;
   const tau = want ? P.resume : P.stop;
   moving += (want - moving) * (1 - Math.exp(-dt / tau));
   if (fling && !openT && !touching) {                  // momentum after a swipe
@@ -958,20 +1212,17 @@ function frame(now) {
   if (touching || fling) offset = target;              // finger and fling are exact, never eased
   else offset += (target - offset) * (1 - Math.exp(-dt * P.smooth));
   if (isPhone) {
-    const top = phoneTopOffset();
-    if (offset < top && !touching) {                   // above the top: no further, ease back
-      fling = 0;
-      offset += (top - offset) * (1 - Math.exp(-dt * 14));
-      if (top - offset < 0.3) offset = top;
-      target = offset;
-    }
-    // white strip = the space above the first tile while it's still near the top of the feed
-    stripH = Math.max(0, Math.min(vh, topBand - (offset - top)));
-    vbandTop.style.height = stripH + "px";
+    // the page scroll is the feed position (same units as before: offset = scroll + the top);
+    // Safari does the dragging, momentum and the bounce at the top
+    const sy = feedScrollY();
+    fling = 0; offset = target = sy + phoneTopOffset();
+    // white strip = the page space above the first tile, until it has scrolled away
+    stripH = Math.max(0, Math.min(vh, topBand - sy));
   } else if (vbandTop.style.height) { vbandTop.style.height = ""; stripH = 0; }
 
   let out;
-  if (vert) out = vertFrame(dt);
+  if (isPhone) out = phoneFrame();
+  else if (vert) out = vertFrame(dt);
   else {
   // expand progress
   if (dir) {
@@ -1054,6 +1305,11 @@ function frame(now) {
         if (v._radius) v._box.style.borderRadius = (v._radius * h / fullH).toFixed(2) + "px";
       }
     }
+    if (isPhone) {                                    // phone: a fixed spot on the page; only re-set when it changes lap
+      const tf = `translate3d(0px, ${snap(t._docY)}px, 0)`;
+      if (tf !== t._tf) { t.el.style.transform = tf; t._tf = tf; }
+      return;
+    }
     let tf = `translate3d(${snap(q.x)}px, ${snap(q.y)}px, 0)`;
     if (pinch && pinch.t === t) {
       tf += ` translate(${pinch.tx}px, ${pinch.ty}px) scale(${pinch.s})`;
@@ -1091,8 +1347,7 @@ function updateCaption(out) {
   if (show) {
     if (capFor !== i) { cap.textContent = c.join("\n"); capFor = i; }
     const w = cap.offsetWidth, h = cap.offsetHeight;
-    let x = mouse.x + 16, y = mouse.y + 2;                 // just right of the arrow tip
-    if (x + w > vw - 16) x = mouse.x - 16 - w;             // flip left near the right edge
+    let x = mouse.x + 16, y = mouse.y + 2;                 // always just right of the arrow tip (it can run off the edge)
     if (y + h > vh - 16) y = vh - 16 - h;
     cap.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     pickInk(openT, r, x, y, w, h);
@@ -1115,8 +1370,7 @@ function updateHeaderMotion(dt) {
   }
   if (aboutOn) {
     body.classList.add("head-follow"); body.classList.remove("head-hidden"); headHidden = false;
-    const t = `translateY(${-aboutEl.scrollTop}px)`;
-    headEl.style.transform = t; copyEl.style.transform = t;
+    headEl.style.transform = copyEl.style.transform = "";   // it's part of the scrolling page now
     headLastOff = offset;
     return;
   }
@@ -1257,6 +1511,7 @@ function pickInk(t, r, x, y, w, h) {
     const wait = Math.max(0, 1400 - (performance.now() - t0));
     setTimeout(() => {
       el.classList.add("is-done");                       // line fades out
+      loaderUp = false;                                  // the belt starts to drift as the panel dissolves
       setTimeout(() => {
         el.classList.add("is-gone");                     // panel dissolves
         el.setAttribute("aria-hidden", "true");
