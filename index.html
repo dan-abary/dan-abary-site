@@ -295,6 +295,11 @@
     body.is-vert .foot > :nth-child(2) { margin-left: auto; }
   }
   body.is-vert .about .bio, body.is-vert .about .l, body.is-vert .about .r { grid-column: 1 / -1; }
+  /* tablet About: one left column a little past the centre (7 of 12), so paragraphs rag
+     instead of running edge to edge */
+  @media (min-width: 600px) {
+    body.is-vert .about .bio, body.is-vert .about .l, body.is-vert .about .r { grid-column: 1 / span 7; text-wrap: pretty; }
+  }
 
   /* Project caption — follows the cursor over a zoomed tile */
   .cap {
@@ -953,7 +958,7 @@ function measureCap(t) {                           // vertical mode shows the ca
 function onTileClick(t) {
   if (performance.now() - dragEnded < 350) return;  // that "tap" was the end of a swipe
   if (isPhone) return;                              // phone: straightforward scroll, no expand
-  if (vert) return vertTap(t);
+  if (vert) return;                                 // tablet: tap-to-zoom off for now (was: return vertTap(t))
   if (!openT) {
     // Phone/tablet: the feed re-centres so the tile's resting place is mid-screen; it glides
     // from where it was tapped, and closing settles it in the centre (not back at the edge).
@@ -1224,8 +1229,8 @@ function frame(now) {
     fling *= Math.pow(FLING_DECAY, dt * 1000);
     if (Math.abs(fling) < 12) fling = 0;
   }
-  // idle drift: desktop belt and tablet feed only — phones stay still until you touch them
-  if (!openT && !touching && !isPhone) target += (vert ? P.drift * 0.6 : P.drift * s) * moving * dt;
+  // idle drift: desktop belt only — tablet drift is off for now (was: !isPhone), phones stay still until you touch them
+  if (!openT && !touching && !vert) target += (vert ? P.drift * 0.6 : P.drift * s) * moving * dt;
   if (touching || fling) offset = target;              // finger and fling are exact, never eased
   else offset += (target - offset) * (1 - Math.exp(-dt * P.smooth));
   if (isPhone) {
