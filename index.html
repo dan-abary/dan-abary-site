@@ -321,6 +321,7 @@
 <body>
   <div class="chrome head"><a class="name" href="#about" id="name" aria-controls="about">Dan Abary:</a> <span class="tagline">Design, art direction,<br class="mbr"> and other things.</span></div>
   <div class="chrome copy">©2026</div>
+  <script>document.querySelector(".copy").textContent = "©" + new Date().getFullYear();</script>
   <div class="chrome foot">
     <span id="clock">Los Angeles: 10:52AM</span>
     <span class="foot-mid"><a href="#about" id="info-link">Information</a> / <a href="mailto:dabary@gmail.com">Contact Me</a></span>
@@ -1439,7 +1440,7 @@ function updateFootInk() {
 }
 
 /* ---- Auto ink: black or white, whichever reads better on what's under the caption ----
-   Each image gets a small luminance map (160px wide) the first time it's zoomed. Every
+   Each image gets a small luminance map (320px wide) the first time it's zoomed. Every
    frame we look at the pixels directly under the caption box, score both inks by the
    contrast they'd get on the darker/busier part of that patch (20th percentile, so a
    few bright pixels can't outvote a dark area), and switch only on a clear win. */
@@ -1449,7 +1450,7 @@ function lumMap(t) {
   if (lumMaps.has(t)) return lumMaps.get(t);
   const img = t.el.querySelector("img");
   if (!img.complete || !img.naturalWidth) return null;
-  const W = 160, H = Math.max(1, Math.round(W * img.naturalHeight / img.naturalWidth));
+  const W = 320, H = Math.max(1, Math.round(W * img.naturalHeight / img.naturalWidth));
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d", { willReadFrequently: true });
   g.drawImage(img, 0, 0, W, H);
@@ -1460,25 +1461,33 @@ function lumMap(t) {
   return m;
 }
 let ink = "black";
+/* Desktop caption ink. Samples a padded area around the caption box (the box itself counts
+   double), every ~4px, and votes: a sample is "dark" when its luminance is under CAP_CROSS
+   (≈ sRGB 150 grey — perceptually where white text starts reading better than black, so mid
+   skin tones and shadows both go white). White wins when most of the weighted area is dark;
+   a small hysteresis band stops flicker along an edge. */
+const CAP_CROSS = 0.3, CAP_PAD = 12, CAP_STEP = 4;
 function pickInk(t, r, x, y, w, h) {
   const m = lumMap(t); if (!m) return;
   // object-fit: cover mapping, screen → map pixels
   const k = Math.max(r.w / m.iw, r.h / m.ih), dw = m.iw * k, dh = m.ih * k;
   const ox = r.x + (r.w - dw) / 2, oy = r.y + (r.h - dh) / 2;
   const sx = m.W / dw, sy = m.H / dh;
-  const cb = [], cw = [];
-  const steps = 14;                                    // ~14×6 samples over the caption box
-  for (let a = 0; a < steps; a++) for (let b = 0; b < 6; b++) {
-    const px = x + (a + .5) / steps * w, py = y + (b + .5) / 6 * h;
+  const x0 = x - CAP_PAD, y0 = y - CAP_PAD, W = w + CAP_PAD * 2, H = h + CAP_PAD * 2;
+  const nx = Math.max(8, Math.round(W / CAP_STEP)), ny = Math.max(4, Math.round(H / CAP_STEP));
+  let dark = 0, total = 0;
+  for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) {
+    const px = x0 + (a + .5) / nx * W, py = y0 + (b + .5) / ny * H;
     let Lv = 1;                                        // off the image = white page
     const mx = Math.floor((px - ox) * sx), my = Math.floor((py - oy) * sy);
-    if (px >= r.x && px <= r.x + r.w && mx >= 0 && my >= 0 && mx < m.W && my < m.H) Lv = m.L[my * m.W + mx];
-    cb.push((Lv + 0.05) / 0.05); cw.push(1.05 / (Lv + 0.05));
+    if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h &&
+        mx >= 0 && my >= 0 && mx < m.W && my < m.H) Lv = m.L[my * m.W + mx];
+    const wt = px >= x && px <= x + w && py >= y && py <= y + h ? 2 : 1;
+    total += wt; if (Lv < CAP_CROSS) dark += wt;
   }
-  const p20 = arr => arr.sort((a, b) => a - b)[Math.floor(arr.length * 0.2)];
-  const sB = p20(cb), sW = p20(cw);
-  if (ink === "black" && sW > sB * 1.15) ink = "white";
-  else if (ink === "white" && sB > sW * 1.15) ink = "black";
+  const f = dark / total;
+  if (ink === "black" && f > 0.55) ink = "white";
+  else if (ink === "white" && f < 0.45) ink = "black";
   cap.style.color = ink === "white" ? "#fff" : "#000";
 }
 
