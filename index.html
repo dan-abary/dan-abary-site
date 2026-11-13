@@ -230,6 +230,10 @@
      away. Closing brings the feed back exactly where it was as About fades. Nothing is pinned to
      the screen, so iOS has no layer to tint its bars from. Desktop/tablet keep the ghosted overlay. */
   html.phone .tile { transition: opacity .6s ease; }
+  /* Phones: tiles never move once placed, so they're plain boxes (no layer of their own each), and
+     Safari skips drawing the ones that are off-screen. Keeps memory low — pinch-zoom multiplies
+     every layer's memory, and too much makes iOS reload the page. */
+  html.phone .tile { will-change: auto; content-visibility: auto; }
   html.phone body.is-about .belt { opacity: 1; }
   html.phone body.is-about .tile { opacity: 0; }
   html.phone body:not(.about-on) .about { display: none; }          /* closed: not in the page at all */
@@ -583,6 +587,19 @@ const tiles = ORDER.map(n => {
   return t;
 });
 
+let loaderUp = true;                 // the belt holds still under the loading screen, so it's revealed exactly
+                                     // on its opening tile, then eases into its drift (videos start then too)
+/* Phones: only videos on or near the screen play (within a screen's height). iOS limits how many can
+   decode at once, and each playing video holds memory. Tablet and desktop keep them all running. */
+const nearIO = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
+  for (const e of entries) {
+    const t = e.target._tile; t._near = e.isIntersecting;
+    if (!isPhone || !t.video) continue;
+    if (t._near) { if (!loaderUp) t.video.play().catch(() => {}); } else t.video.pause();
+  }
+}, { rootMargin: "100% 0px" }) : null;
+if (nearIO) for (const t of tiles) if (t.video) { t.el._tile = t; nearIO.observe(t.el); }
+
 /* Expand state (declared early; layout() reads it) */
 let openT = null, u = 0, dir = 0, slot = null;
 
@@ -602,9 +619,13 @@ let feedLaps = 12;
 let aboutY = null, feedY = 0, aboutT = 0;
 function setAboutY(y) { aboutY = y; document.documentElement.style.setProperty("--about-y", y + "px"); }
 function feedScrollY() { return document.body.classList.contains("about-page") ? feedY : scrollY; }   // where the feed is
+function placePhoneTile(t) {          // phone: a fixed spot on the page; only re-set when it changes lap
+  const top = snap(t._docY) + "px";
+  if (top !== t._tf) { t.el.style.top = top; t.el.style.transform = ""; t._tf = top; }
+}
 function placePhoneTiles() {          // write tile positions now, so a page jump and the tiles move in one frame
   phoneFrame();
-  for (const t of tiles) { const tf = `translate3d(0px, ${snap(t._docY)}px, 0)`; if (tf !== t._tf) { t.el.style.transform = tf; t._tf = tf; } }
+  for (const t of tiles) placePhoneTile(t);
 }
 function setFeedScroll(y) {           // put the feed at y (resize anchoring)
   if (document.body.classList.contains("about-page")) feedY = y; else scrollTo(0, y);
@@ -678,7 +699,10 @@ function layout() {
     topBand = Math.ceil(hb + (phone ? 70 : vm));   // phone: generous air between the two-line header and the feed
     botBand = isPhone ? 0 : Math.ceil(vh - ft + vm);   // phone: images run under the footer to the bottom edge
     root.setProperty("--band-top", topBand + "px"); root.setProperty("--band-bot", botBand + "px");
-    if (!isPhone) root.removeProperty("--feed-h");
+    if (!isPhone) {
+      root.removeProperty("--feed-h");
+      for (const t of tiles) { t.el.style.top = ""; t._tf = null; if (t.video && !loaderUp) t.video.play().catch(() => {}); }
+    }
     // phone: About's scroll window starts 10px under the header (where text vanishes as you scroll);
     // padding inside brings the first line to one paragraph space (--sec) below the header
     root.setProperty("--about-top", topBand + "px");
@@ -711,6 +735,7 @@ function layout() {
   }
   root.removeProperty("--m");
   root.removeProperty("--feed-h");
+  for (const t of tiles) { t.el.style.top = ""; t._tf = null; if (t.video && !loaderUp) t.video.play().catch(() => {}); }
   gap = 20 * s;
   bandTop = Math.round(vh / 2 - 171 * s);   // matches y=369 on a 1080 frame
   const hb = document.querySelector(".head").getBoundingClientRect().bottom;
@@ -776,8 +801,6 @@ function phoneTopOffset() { const f = tiles.find(t => t.n === PHONE_FIRST); retu
   else offset = target = x;
 }
 let moving = 0;                      // 0..1 drift factor, eased (starts still; see loaderUp)
-let loaderUp = true;                 // the belt holds still under the loading screen, so it's revealed exactly
-                                     // on its opening tile, then eases into its drift
 const mouse = { x: -1, y: -1, in: false };
 addEventListener("pointermove", e => { if (e.pointerType === "mouse") { mouse.x = e.clientX; mouse.y = e.clientY; mouse.in = true; } });
 document.documentElement.addEventListener("mouseleave", () => { mouse.in = false; });
@@ -1298,11 +1321,7 @@ function frame(now) {
         if (v._radius) v._box.style.borderRadius = (v._radius * h / fullH).toFixed(2) + "px";
       }
     }
-    if (isPhone) {                                    // phone: a fixed spot on the page; only re-set when it changes lap
-      const tf = `translate3d(0px, ${snap(t._docY)}px, 0)`;
-      if (tf !== t._tf) { t.el.style.transform = tf; t._tf = tf; }
-      return;
-    }
+    if (isPhone) { placePhoneTile(t); return; }
     let tf = `translate3d(${snap(q.x)}px, ${snap(q.y)}px, 0)`;
     if (pinch && pinch.t === t) {
       tf += ` translate(${pinch.tx}px, ${pinch.ty}px) scale(${pinch.s})`;
@@ -1510,7 +1529,7 @@ function pickInk(t, r, x, y, w, h) {
       setTimeout(() => {
         el.classList.add("is-gone");                     // panel dissolves
         el.setAttribute("aria-hidden", "true");
-        tiles.forEach(t => t.video && t.video.play().catch(() => {}));
+        tiles.forEach(t => t.video && (!isPhone || t._near !== false) && t.video.play().catch(() => {}));
         setTimeout(() => el.remove(), 1200);
       }, 450);
     }, wait);
